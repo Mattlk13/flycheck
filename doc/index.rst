@@ -88,13 +88,17 @@ in-depth references of all parts of Flycheck.
    user/error-interaction
    user/flycheck-versus-flymake
 
+.. _flycheck-developer-guide:
+
 The Developer Guide
 ===================
 
 The Developer Guide shows how extend Flycheck and how to write syntax checkers
 for Flycheck.
 
-.. todo:: To be written
+.. toctree::
+
+   developer/developing
 
 .. _flycheck-community-guide:
 
