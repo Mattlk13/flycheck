@@ -21,13 +21,12 @@ directly in the buffer you are editing.  Instead of you manually invoking
 ``make`` or the compiler for your favorite language, Flycheck takes care of it
 for you, collects the errors and displays them right there in the buffer.
 
-How Flycheck does it is rather straightforward.  Whenever a syntax check is
+How Flycheck works is rather straightforward.  Whenever a syntax check is
 started (see :ref:`flycheck-syntax-checks`), the following happens:
 
 1. First, Flycheck runs the external program as an asynchronous process using
-   ``start-process``.  While this process runs, Flycheck accumulates its output.
-   See :infonode:`(elisp)Asynchronous Processes` for more information on running
-   processes from inside Emacs.
+   ``start-process``.  While this process runs, Flycheck simply accumulates its
+   output.
 2. When the process exits, Flycheck parses its output in order to collect the
    errors.  The raw output is turned into a list of ``flycheck-error`` objects
    containing, among others, the filename, line, column, message and severity of
@@ -37,8 +36,8 @@ started (see :ref:`flycheck-syntax-checks`), the following happens:
    discarded.
 4. Relevant errors are highlighted by Flycheck in the buffer, according to user
    preference.  By default, each error adds a mark in the fringe at the line it
-   occurs, in addition to underlining the symbol at the position of the error
-   using overlays (see :infonode:`(elisp)Overlays`).
+   occurs, and underlines the symbol at the position of the error using
+   overlays.
 5. Finally, Flycheck rebuilds the error list buffer.
 
 Flycheck follows this process for all the :ref:`many different syntax checkers
@@ -52,6 +51,14 @@ Flycheck follows this process for all the :ref:`many different syntax checkers
    instances of *generic checkers*.  See ``flycheck-merlin`` for a case where a
    generic checker is preferred.
 
+.. seealso::
+
+   :infonode:`(elisp)Asynchronous Processes`
+      How to run asynchronous processes from inside Emacs.
+
+   :infonode:`(elisp)Overlays`
+      How to add temporary annotations to a buffer.
+
 Adding a syntax checker to Flycheck
 ===================================
 
@@ -59,7 +66,7 @@ To add a syntax checker to Flycheck, you need to answer a few questions:
 
 - How to invoke the checker?  What is the name of its program, and what
   arguments should Flycheck pass to it?
-- How to parse the checker output?
+- How to parse the error messages from the checker output?
 - What language (or languages) will the checker be used for?
 
 Once you have answered these questions, you merely have to translate the answers
@@ -80,35 +87,37 @@ find in ``flycheck.el``:
 
 The code is rather self-explanatory; but we'll go through it nonetheless.
 
-- First, we define a checker using ``flycheck-define-checker``.  The argument to
-  pass is the name of the checker, as a symbol.  The name is used to refer to
-  checker in the documentation, so it should usually be the name of the language
-  to check, or of the program used to do the checking, or a combination of both.
-  Here, ``scalac`` is the program, but the checker is named ``scala``.  There is
-  another Scala checker using ``scalastyle``, with the symbol
-  ``scala-scalastyle``.  See ``flycheck-checkers`` for the full list of symbols.
+- First, we define a checker using ``flycheck-define-checker``.  The first
+  argument is the name of the checker, as a symbol.  The name is used to refer
+  to the checker in the documentation, so it should usually be the name of the
+  language to check, or the name of the program used to do the checking, or a
+  combination of both.  Here, ``scalac`` is the program, but the checker is
+  named ``scala``.  There is another Scala checker using ``scalastyle``, with
+  the name ``scala-scalastyle``.  See ``flycheck-checkers`` for the full list of
+  names.
 
-- After the symbol comes the docstring.  This is a documentation string
-  answering three questions: 1) What language is this checker for?  2) What is
-  the program used? 3) Where can users get this program?
+- After the name comes the docstring.  This is a documentation string answering
+  three questions: 1) What language is this checker for?  2) What is the program
+  used? 3) Where can users get this program?  Nothing more.
 
 - The rest of the arguments are keyword arguments; their order does not matter,
   but they are usually given in the fashion above.
 
   - `:command` describes what command to run, and what arguments to pass.  Here,
     we tell Flycheck to run ``scalac -Ystop-after:parser`` on ``source``.  In
-    Flycheck, we usually want to get error feedback as fast as possible, that is
-    why we will pass any flags that will speed up the invocation of a compiler,
-    even at the cost of missing out on some errors.  Here, we are telling
-    ``scalac`` to stop after the parsing phase to ensure we are getting syntax
-    errors quickly.
+    Flycheck, we usually want to get error feedback as fast as possible, hence
+    we will pass any flag that will speed up the invocation of a compiler, even
+    at the cost of missing out on some errors.  Here, we are telling ``scalac``
+    to stop after the parsing phase to ensure we are getting syntax errors
+    quickly.
 
     The ``source`` argument is special: it instructs Flycheck to create a
     temporary file containing the content of the current buffer, and to pass
     that temporary file as argument to ``scalac``.  That way, ``scalac`` can be
-    run on the content of the buffer, even when the buffer has not been saved
-    yet.  The other ways to pass the content of the buffer to the command are
-    documented in the docstring of ``flycheck-substitute-argument``.
+    run on the content of the buffer, even when the buffer has not been saved.
+    There are other ways to pass the content of the buffer to the command, e.g.,
+    by piping it through standard input.  These special arguments are described
+    in the docstring of ``flycheck-substitute-argument``.
 
   - `:error-patterns` describes how to parse the output, using `rx` patterns.
     Here, we expect ``scalac`` to return error messages of the form::
@@ -116,13 +125,13 @@ The code is rather self-explanatory; but we'll go through it nonetheless.
       foo.scala:1: error: Syntax error, unexpected ...
 
     This is a common output format for compilers.  With `:error-patterns`, we
-    tell Flycheck to extract three parts from each line in the output: the
-    ``file-name``, the ``line`` number, and the ``message`` content.  These
-    three parts are then used by Flycheck to create a ``flycheck-error`` of the
-    ``error`` severity.
+    tell Flycheck to extract three parts from each line in the output that
+    matches the pattern: the ``file-name``, the ``line`` number, and the
+    ``message`` content.  These three parts are then used by Flycheck to create
+    a ``flycheck-error`` with the ``error`` severity.
 
   - `:modes` is the list of Emacs major modes in which this checker can run.
-    Here, we want the checker to run only in buffers with ``scala-mode`` active.
+    Here, we want the checker to run only in ``scala-mode`` buffers.
 
 That's it!  This definition alone contains everything Flycheck needs to run
 ``scalac`` on a Scala buffer and parse its output in order to give error
@@ -130,13 +139,34 @@ feedback to the user.
 
 Usually though, you'll want to register the checker as well (see :ref:`Select
 checkers`).  For that, you just need to add the checker symbol to
-``flycheck-checkers``.  The order of checkers do matter, as only one checker can
-be enabled in a buffer at a time.  Usually you want to put the most useful
-default as the first checker for that mode.  For instance, Flycheck has a
-checker for ``bash`` and ``zsh`` scripts in shell-mode, but `sh-bash` comes
-before `sh-zsh` in the list.
+``flycheck-checkers``.  The order of checkers does matter, as only one checker
+can be enabled in a buffer at a time.  Usually you want to put the most useful
+default as the first checker for that mode.  For instance, here are the
+JavaScript checkers provided by Flycheck:
 
-Maybe send a PR?  See contributor's guide.
+.. code-block:: console
+
+   javascript-eslint
+   javascript-jshint
+   javascript-gjslint
+   javascript-jscs
+   javascript-standard
+
+If a buffer is in ``js-mode``, the first checker Flycheck will try first to
+enable ``javascript-eslint`` before any other JavaScript checker.
+
+There are other factors governing checker selection in a buffer, namely whether
+a checker is disabled by user configuration (see :ref:`Disable syntax
+checkers`), and whether this checker *can* be enabled (see the ``:enabled``
+property in ``flycheck-define-generic-checker``).
+
+.. seealso::
+
+   flycheck-get-checker-for-buffer
+     This is the function that looks through ``flycheck-checkers`` to find a
+     valid checker for the buffer.
+
+Here is a slightly more complex checker:
 
 .. code-block:: elisp
 
@@ -160,6 +190,27 @@ Maybe send a PR?  See contributor's guide.
     :modes protobuf-mode
     :predicate (lambda () (buffer-file-name)))
 
+The ``:command`` is a little longer, as the checker pass more flags to
+``protoc``.  Note also that there are three error patterns; the first one will
+catch ``notes`` from the compiler and turn them into ``flycheck-error`` objects
+with the ``info`` severity.
+
+More importantly, there is another property, ``:predicate``, that is used to
+determine if the checker can be called.  Here, this checker should be called
+only when there is a file associated to the buffer.
+
+.. seealso::
+
+   flycheck-define-generic-checker
+   flycheck-define-command-checker
+     For the full documentation of all the properties you can pass to
+     ``flycheck-define-checker``.
+
+Once you have written your own syntax checker, why not submit a pull request to
+integrate into Flycheck?  Please do check out our :ref:`Contributor's guide` to
+know how we deal with pull requests.
 
 Writing an extension
 ====================
+
+TODO
