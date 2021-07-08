@@ -586,7 +586,7 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
    .. syntax-checker:: go-staticcheck
 
-      Perform static analysis and code linting with staticcheck_, the successor to megacheck_.
+      Perform static analysis and code linting with staticcheck_, the successor to megacheck.
 
       .. defcustom:: flycheck-go-version
 
@@ -983,11 +983,19 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
    All Python checkers are invoked indirectly using ``python -c ...`` (rather
    than a direct call to ``flake8`` or ``pylint``) to make it easier to switch
-   between Python 2 and 3.  For example, you can use ``(setq-local
+   between Python 2 and 3.  For example, you can use ``(setq
    flycheck-python-pylint-executable "python3")`` to run ``pylint`` using Python
    3, or ``(defvaralias 'flycheck-python-flake8-executable
    'python-shell-interpreter)`` to run ``flake8`` through the executable pointed
    to by ``python-shell-interpreter``.
+
+   .. note::
+
+      If Flycheck complains about a missing Python checker, make sure that the
+      checker is reachable from ``sys.path``, using e.g. ``python -m pylint``:
+      often, the issue is that the checker is installed globally but not in the
+      current virtualenv.  Alternatively, you can invoke the checker script
+      directly, with ``(setq flycheck-python-pylint-executable "pylint")``.
 
    .. seealso::
 
@@ -1021,6 +1029,14 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
       .. syntax-checker-config-file:: flycheck-flake8rc
 
+   .. syntax-checker:: python-pyright
+
+      Type check python with  `pyright <https://github.com/microsoft/pyright>`_.
+
+      .. note::
+
+         This syntax checker requires pyright.
+
    .. syntax-checker:: python-mypy
 
       Type check python with  `mypy <http://www.mypy-lang.org/>`_.
@@ -1029,7 +1045,7 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
          This syntax checker requires mypy 0.580 or newer.
 
-      .. syntax-checker-config-file:: flycheck-python-mypy-ini
+      .. syntax-checker-config-file:: flycheck-python-mypy-config
 
       .. defcustom:: flycheck-python-mypy-cache-dir
 
@@ -1122,7 +1138,7 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
    .. syntax-checker:: ruby-rubocop
 
-      Check syntax and lint with `RuboCop <http://batsov.com/rubocop/>`_.
+      Check syntax and lint with `RuboCop <https://rubocop.org/>`_.
 
       .. note::
 
@@ -1137,7 +1153,7 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
    .. syntax-checker:: ruby-standard
 
-      Check syntax and lint with `Standard <https://github.com/testdouble/standard/>`_.
+      Check syntax and lint with `Ruby Standard <https://github.com/testdouble/standard/>`_.
 
       .. note::
 
@@ -1593,5 +1609,3 @@ to view the docstring of the syntax checker.  Likewise, you may use
       Check syntax with yamllint.
 
       .. syntax-checker-config-file:: flycheck-yamllintrc
-
-         Location of yamllint configuration file.
